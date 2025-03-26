@@ -66,7 +66,6 @@ contract CreatorEconomy is AutomationCompatibleInterface {
 
     MileStoneState private s_milestoneState;
 
-
     constructor(address _platformWallet, uint256 interval, uint256 price) {
         require(_platformWallet != address(0), "Invalid platform wallet");
         platformWallet = _platformWallet;
@@ -91,7 +90,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         _;
     }
 
-    function createProduct(string memory productId) external whenOpen() payable {
+    function createProduct(string memory productId) external whenOpen() {
         require(identifiers[productId].creator != address(0), "Product Already Exists");
         activeIdentifiers.push(productId);
 
@@ -174,7 +173,6 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         return (upkeepNeeded, "0x0"); 
     }  
 
-
     function performUpkeep(bytes calldata  ) external override {
         (bool upkeepNeeded,) = checkUpkeep("");
          require(upkeepNeeded, "Upkeep not needed");
@@ -210,7 +208,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         s_milestoneState = MileStoneState.OPEN;
     }  
 
-    function completeMilestone(string memory productId) external payable whenOpen() onlyFans(productId){
+    function completeMilestone(string memory productId) external whenOpen() onlyFans(productId){
         Milestone storage product = products[productId];
         require(product.totalAmount > 0, "No funds locked");
         require(product.endsAt >= block.timestamp, "Milestone Expired");
@@ -244,14 +242,14 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         }
     }
 
-    function ownersWithdrawl( uint256 amount) external payable whenOpen() onlyOwner() {
+    function ownersWithdrawl( uint256 amount) external whenOpen() onlyOwner() {
         require(amount <= owner_balance * 70 / 100, "Amount exceeds collectable funds");
         payable(msg.sender).transfer(amount);
         owner_balance -= amount;
         emit OwnersWithdrawl(msg.sender, amount);
     }
 
-    function creatorsWithdrawl( uint256 amount) external payable{
+    function creatorsWithdrawl( uint256 amount) external {
         Creator_balance storage balance = balances[msg.sender];
         require(amount <= balance.balance, "Amount exceeds collecteables funds");
         require(msg.sender == balance.creator, "Amount exceeds collected funds");
