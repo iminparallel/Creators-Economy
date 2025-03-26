@@ -22,6 +22,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
     struct Creator_balance {
         address creator;
         uint256 balance;
+        string[] identifier_list;
     }
 
     struct Milestone {
@@ -47,6 +48,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
 
     address private platformWallet;
     string[] private activeMilestones;
+    string[] private activeIdentifiers;
 
     uint256 private immutable i_interval;
     uint256 private s_lastTimeStamp;
@@ -57,7 +59,8 @@ contract CreatorEconomy is AutomationCompatibleInterface {
     event AllFundsWithdrawn(address indexed user, uint256 totalAmount);
     event OwnersWithdrawl(address indexed creator, uint256 amount);
     event PriceChange(uint256 amount);
-    event BalanceCreated(address creator, uint256 balance);
+    event BalanceCreated(address creator);
+    event BalanceUpdated(address creator);
     event ProductCreated(address creator, string product);
     event CreatorsWithdrawl(address indexed creator, uint256 amount);
 
@@ -90,13 +93,23 @@ contract CreatorEconomy is AutomationCompatibleInterface {
 
     function createProduct(string memory productId) external whenOpen() payable {
         require(identifiers[productId].creator != address(0), "Product Already Exists");
+        activeIdentifiers.push(productId);
 
         if (balances[msg.sender].creator != address(0)){
+            string[] memory identifier_list = new string[](0);
             balances[msg.sender] = Creator_balance({
                 creator: msg.sender,
-                balance: 0
+                balance: 0,
+                identifier_list:identifier_list
             });
-            emit BalanceCreated(msg.sender, 0);
+            emit BalanceCreated(msg.sender);
+        }else{
+            Creator_balance storage creator = balances[msg.sender];
+            string[] memory identifier_list = new string[](creator.identifier_list.length + 1);
+            identifier_list[identifier_list.length] = productId;
+            creator.identifier_list = identifier_list;
+            balances[msg.sender] = creator;
+            emit BalanceUpdated(msg.sender);
         }
 
         address[] memory fansArray = new address[](0);
@@ -107,7 +120,6 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         });
 
         emit ProductCreated(msg.sender, productId);
-
     }
 
     function lockFunds(string memory productId, string memory identifier) external whenOpen() payable {
@@ -125,7 +137,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         uint256 netAmount = msg.value - fee;
         uint256 endsAt = block.timestamp + 3600*24*7;
 
-        newFans[identified.fans.length] = msg.sender;
+        newFans[newFans.length] = msg.sender;
         
         balance_mapping.balance += fee;
         identified.fans = newFans;
@@ -266,9 +278,12 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         return owner_balance;
     }
 
-    
-    function getCreatorsBalance() public view  returns (uint256) {
-        return balances[msg.sender].balance;
+    function getIdentifiers() public view  returns (string[] memory) {
+        return activeIdentifiers;
+    }
+
+    function getBalance() public view  returns (Creator_balance memory) {
+        return balances[msg.sender];
     }
 
     function getPrice() public view returns (uint256) {
