@@ -159,7 +159,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         emit FundsLocked(msg.sender, netAmount);
     }
 
-    function checkUpkeep(bytes memory  )
+    function checkUpkeep(bytes memory)
         public
         view
         override
@@ -173,7 +173,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         return (upkeepNeeded, "0x0"); 
     }  
 
-    function performUpkeep(bytes calldata  ) external override {
+    function performUpkeep(bytes calldata) external override {
         (bool upkeepNeeded,) = checkUpkeep("");
          require(upkeepNeeded, "Upkeep not needed");
         if (!upkeepNeeded) {

@@ -1,4 +1,4 @@
-const { network } = require("hardhat");
+const { network, ethers } = require("hardhat");
 const {
   networkConfig,
   developmentChains,
@@ -10,40 +10,36 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deployer } = await getNamedAccounts();
   const chainId = network.config.chainId;
 
-  console.log(deployer);
+  console.log(`Deploying with account: ${deployer}`);
 
-  let ethUsdPriceFeedAddress;
-  /*  if (chainId == 31337) {
-    const ethUsdAggregator = await deployments.get("MockV3Aggregator");
-    ethUsdPriceFeedAddress = ethUsdAggregator.address;
-  } else {
-    ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"];
-  } */
+  const platformWallet = deployer; // Using deployer as platform wallet
+  const interval = 3600 * 24 * 3; // 3 days in seconds
+  const initialPrice = ethers.parseEther("0.00001"); // Initial milestone price
 
-  const mileStones = await deploy("MileStones", {
+  const CreatorEconomy = await deploy("CreatorEconomy", {
     from: deployer,
     args: [
-      deployer,
-      3600 * 24 * 3,
-      /*ethUsdPriceFeedAddress, networkConfig[chainId]["entryFee"]*/ ethers.parseEther(
-        "0.001"
-      ) / BigInt(100000000000000),
+      platformWallet, // Platform wallet address
+      interval, // Interval for upkeep
+      initialPrice, // Initial milestone price
     ],
     log: true,
     waitConfirmations: network.config.blockConfirmations || 1,
-    //gasLimit: 200000000,
   });
-  log(`...........${mileStones.address}.............`);
+
+  log(`CreatorEconomy deployed at: ${CreatorEconomy.address}`);
+
+  // Verify on etherscan if not on a development chain
   if (
     !developmentChains.includes(network.name) &&
     process.env.ETHERSCAN_API_KEY
   ) {
-    await verify(mileStones.address, [
-      deployer,
-      3600 * 24 * 3,
-      /* networkConfig[chainId]["entryFee"], */ ethers.parseEther("0.00001") /
-        BigInt(100000000000000),
+    await verify(CreatorEconomy.address, [
+      platformWallet,
+      interval,
+      initialPrice,
     ]);
   }
 };
-module.exports.tags = ["all", "milestones"];
+
+module.exports.tags = ["all", "CreatorEconomy"];

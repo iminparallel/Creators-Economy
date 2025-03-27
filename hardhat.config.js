@@ -14,6 +14,7 @@ const ALCHEMY_KEY = process.env.ALCHEMY_KEY || "";
 module.exports = {
   solidity: {
     compilers: [
+      { version: "0.8.0" },
       { version: "0.8.28" },
       {
         version: "0.8.19",
