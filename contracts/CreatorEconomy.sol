@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 //import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 //import "./PriceConverter.sol";
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 error Milestones__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
 
 
@@ -91,30 +91,26 @@ contract CreatorEconomy is AutomationCompatibleInterface {
     }
 
     function createProduct(string memory productId) external whenOpen() {
-        require(identifiers[productId].creator != address(0), "Product Already Exists");
+        console.log("product Id", productId);
+        require(identifiers[productId].creator == address(0), "Product Already Exists");
         activeIdentifiers.push(productId);
 
-        if (balances[msg.sender].creator != address(0)){
-            string[] memory identifier_list = new string[](0);
-            balances[msg.sender] = Creator_balance({
-                creator: msg.sender,
-                balance: 0,
-                identifier_list:identifier_list
-            });
+        if (balances[msg.sender].creator == address(0)) {
+            // First time creator
+            balances[msg.sender].creator = msg.sender;
+            balances[msg.sender].balance = 0;
+            delete balances[msg.sender].identifier_list;
+            console.log("product Id before pushing", productId);
+            balances[msg.sender].identifier_list.push(productId);
             emit BalanceCreated(msg.sender);
-        }else{
-            Creator_balance storage creator = balances[msg.sender];
-            string[] memory identifier_list = new string[](creator.identifier_list.length + 1);
-            identifier_list[identifier_list.length] = productId;
-            creator.identifier_list = identifier_list;
-            balances[msg.sender] = creator;
+        } else {
+            balances[msg.sender].identifier_list.push(productId);
             emit BalanceUpdated(msg.sender);
         }
 
         address[] memory fansArray = new address[](0);
-
         identifiers[productId] = Product_identifiers({
-            creator:msg.sender,
+            creator: msg.sender,
             fans: fansArray
         });
 
@@ -126,23 +122,14 @@ contract CreatorEconomy is AutomationCompatibleInterface {
         require(msg.value >= s_milestone_price, "Sent amount must be higher than entry fee");
         require(products[productId].totalAmount == 0, "User already locked funds");
 
-        Product_identifiers storage identified = identifiers[identifier];
-        Creator_balance storage balance_mapping = balances[identified.creator];
-
-        address[] memory newFans = new address[](identified.fans.length + 1);
-
         activeMilestones.push(productId);
         uint256 fee = (msg.value * CREATOR_PERCENTAGE) / 100;
         uint256 netAmount = msg.value - fee;
         uint256 endsAt = block.timestamp + 3600*24*7;
 
-        newFans[newFans.length] = msg.sender;
         
-        balance_mapping.balance += fee;
-        identified.fans = newFans;
-  
-        balances[identified.creator] = balance_mapping;
-        identifiers[productId] = identified;
+        balances[msg.sender].balance += fee;
+        identifiers[productId].fans.push(msg.sender);
 
         products[productId] = Milestone({
             creator: msg.sender,
@@ -278,6 +265,10 @@ contract CreatorEconomy is AutomationCompatibleInterface {
 
     function getIdentifiers() public view  returns (string[] memory) {
         return activeIdentifiers;
+    }
+
+    function getIdentifier(string memory productId) public view  returns (Product_identifiers memory) {
+        return identifiers[productId];
     }
 
     function getBalance() public view  returns (Creator_balance memory) {
