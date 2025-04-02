@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 //import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 //import "./PriceConverter.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 error Milestones__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
 
 
@@ -91,7 +91,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
     }
 
     function createProduct(string memory productId) external whenOpen() {
-        console.log("product Id", productId);
+        //console.log("product Id", productId);
         require(identifiers[productId].creator == address(0), "Product Already Exists");
         activeIdentifiers.push(productId);
 
@@ -100,7 +100,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
             balances[msg.sender].creator = msg.sender;
             balances[msg.sender].balance = 0;
             delete balances[msg.sender].identifier_list;
-            console.log("product Id before pushing", productId);
+            //console.log("product Id before pushing", productId);
             balances[msg.sender].identifier_list.push(productId);
             emit BalanceCreated(msg.sender);
         } else {
@@ -129,7 +129,7 @@ contract CreatorEconomy is AutomationCompatibleInterface {
 
         
         balances[msg.sender].balance += fee;
-        identifiers[productId].fans.push(msg.sender);
+        identifiers[identifier].fans.push(msg.sender);
 
         products[productId] = Milestone({
             creator: msg.sender,

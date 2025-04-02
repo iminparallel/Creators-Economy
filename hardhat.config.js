@@ -44,7 +44,7 @@ module.exports = {
     hardhat: {},
     sepolia: {
       url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-      accounts: [EDU_PRIVATE_KEY],
+      accounts: [PRIVATE_KEY],
       chainId: 11155111,
       blockConfirmations: 6,
     },
